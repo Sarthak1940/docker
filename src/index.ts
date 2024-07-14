@@ -1,23 +1,35 @@
-import { PrismaClient } from "@prisma/client";
-import express from "express";
+import express, { Express, Request, Response } from 'express';
+import { User } from './db';
 
-const app = express();
-const prisma = new PrismaClient()
-app.use(express.json())
+const app: Express = express();
+const port: number = 3000;
 
-app.get("/", (req, res) => {
-  res.send("Server is running")
-})
+app.use(express.json());
 
-app.post("/", async (req, res) => {
-  await prisma.user.create({
-    data: {
-      name: req.body.name,
-      email: req.body.email,
-    }
-  })
+// Endpoint to create a user
+app.post('/user', async (req: Request, res: Response) => {
+  const { name, age, email } = req.body;
+  const newUser = new User({ name, age, email });
 
-  res.status(201).json({ message: "User created successfully" })
-})
+  try {
+    const savedUser = await newUser.save();
+    res.status(201).send({ message: 'User created', user: savedUser });
+  } catch (err) {
+    res.status(500).send({ message: 'Error creating user', error: err });
+  }
+});
 
-app.listen(3000)
+// Endpoint to fetch all users
+app.get('/users', async (req: Request, res: Response) => {
+  try {
+    const users = await User.find();
+    res.status(200).send(users);
+  } catch (err) {
+    res.status(500).send({ message: 'Error fetching users', error: err });
+  }
+});
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
